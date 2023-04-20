@@ -1,0 +1,24 @@
+import "primitives/core.fil";
+import "primitives/sequential.fil";
+
+// delay G:3 tells us alu processes new inputs every 3 cycles
+comp main<G:1> (
+    @interface[G] go:1,
+    @[G+3,G+4] op:1,
+    @[G,G+1] left:32,
+    @[G,G+1] right:32,
+) -> (@[G+3,G+4] out:32) {
+    A := new Add[32];
+    M := new FastMult[32];
+    a0 := A<G>(left,right);
+    m0 := M<G>(left,right);
+
+    // registers to hold adder value until mult is done
+    r0 := new Register[32]<G,G+2>(a0.out);
+    r1 := new Register[32]<G+1,G+3>(r0.out);
+    r2 := new Register[32]<G+2,G+4>(r1.out);
+
+    // mux selects when mult is ready, at G+3
+    mx := new Mux[32]<G+3>(op,r2.out,m0.out);
+    out = mx.out;
+}
